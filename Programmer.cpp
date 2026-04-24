@@ -20,11 +20,11 @@ ProjectLeader* Programmer::getIsMemberOfProject() const{return this -> projectLe
 
 void Programmer::attendDepartment(SoftwareHouse* softwareHouse){this -> setIsMember(softwareHouse);}
 void Programmer::leaveDepartment(){this -> setIsMember(NULL);}
-bool Programmer::isMemberOfDepartment(){return this -> softwareHouse != NULL;}
+bool Programmer::isMemberOfDepartment(){return this -> getIsMember() != NULL;}
 
 void Programmer::attendProject(ProjectLeader* projectLeader){this -> projectLeader = projectLeader;}
-void Programmer::leaveProject(){this -> projectLeader = NULL;}
-bool Programmer::isMemberOfProject(){return this -> projectLeader != NULL;}
+void Programmer::leaveProject(){this -> setIsMemberOfProject(NULL);}
+bool Programmer::isMemberOfProject(){return this -> getIsMemberOfProject() != NULL;}
 
 void Programmer::display() const{
     Employee::display(); 
