@@ -32,7 +32,7 @@ void SoftwareHouse::removeProgrammer(Programmer* programmer){
     else{
         auto it = this -> theStaff.find(programmer); 
         programmer -> leaveDepartment(); 
-        theStaff.erase(programmer); 
+        theStaff.erase(it); 
         cout << "Done!" << endl; 
     }
 }
