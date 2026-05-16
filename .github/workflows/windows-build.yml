@@ -34,28 +34,31 @@ jobs:
         Copy-Item $exe.FullName -Destination "build_result\"
         Write-Host "Đã copy: $($exe.FullName)"
 
-        # Path Qt đã biết từ log: D:\a\Project-of-Alee\Project-of-Alee\Qt\6.4.2\mingw_64
-        $qtBin     = "D:\a\Project-of-Alee\Project-of-Alee\Qt\6.4.2\mingw_64\bin"
-        $qtPlugins = "D:\a\Project-of-Alee\Project-of-Alee\Qt\6.4.2\mingw_64\plugins"
+        # Tìm windeployqt.exe trực tiếp — không đoán path nữa
+        $windeployqt = Get-ChildItem -Path "D:\a" -Recurse -Filter "windeployqt.exe" `
+                           -ErrorAction SilentlyContinue | Select-Object -First 1
 
-        # Dùng biến môi trường thay vì hardcode (linh hoạt hơn)
-        $qtRoot    = Split-Path (Split-Path $env:Qt6_DIR -Parent) -Parent
-        $qtBin     = "$qtRoot\bin"
-        $qtPlugins = "$qtRoot\plugins"
+        if (-not $windeployqt) {
+            Write-Error "Không tìm thấy windeployqt.exe!"
+            exit 1
+        }
 
-        Write-Host "Qt root: $qtRoot"
-        Write-Host "Plugins: $qtPlugins"
+        $qtBin     = $windeployqt.DirectoryName
+        $qtPlugins = Join-Path (Split-Path $qtBin -Parent) "plugins"
 
-        # Set đúng plugin path trước khi chạy windeployqt
+        Write-Host "windeployqt : $($windeployqt.FullName)"
+        Write-Host "Qt bin      : $qtBin"
+        Write-Host "Qt plugins  : $qtPlugins"
+
         $env:QT_PLUGIN_PATH = $qtPlugins
 
-        & "$qtBin\windeployqt.exe" `
+        & $windeployqt.FullName `
             --release `
             --no-translations `
             --compiler-runtime `
             --plugindir "build_result\plugins" `
             "build_result\SolveLinearProgramming.exe"
-
+            
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
       with:
