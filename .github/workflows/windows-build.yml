@@ -1,0 +1,49 @@
+name: Build Windows App
+
+on:
+  push:
+    branches: [ master, main, Algorithm_of_Hau ] # Tự động chạy khi bạn push lên nhánh master hoặc main
+
+jobs:
+  build-windows:
+    runs-on: windows-latest # Máy chủ Windows của GitHub
+
+    steps:
+    - name: 1. Lấy mã nguồn từ GitHub về máy chủ
+      uses: actions/checkout@v4
+
+    - name: 2. Cài đặt Qt 6.4.2 (MinGW 64-bit)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.4.2' # Đúng phiên bản Qt của bạn
+        arch: 'win64_mingw'
+
+    - name: 3. Cấu hình và Biên dịch bằng CMake
+      run: |
+        # Khởi tạo thư mục build và chỉ định Generator là MinGW
+        cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        # Tiến hành build ứng dụng ở chế độ Release
+        cmake --build build --config Release
+
+    - name: 4. Thu thập file thực thi và đóng gói DLL
+      shell: bash
+      run: |
+        # Tạo thư mục chứa sản phẩm cuối cùng
+        mkdir build_result
+        
+        # LƯU Ý: Thay "SolveLinearProgramming.exe" bằng tên target trong file CMakeLists.txt của bạn nếu có khác biệt
+        # Kiểm tra xem file exe nằm ở thư mục build/ hay build/Release/ rồi copy ra ngoài
+        if [ -f "build/SolveLinearProgramming.exe" ]; then
+          cp build/SolveLinearProgramming.exe build_result/
+        else
+          cp build/Release/SolveLinearProgramming.exe build_result/
+        fi
+        
+        # Gọi công cụ của Qt 6 để tự động nhặt các file DLL cần thiết
+        windeployqt --release --no-translations --compiler-runtime build_result/SolveLinearProgramming.exe
+
+    - name: 5. Đóng gói thành file ZIP gửi về cho bạn
+      uses: actions/upload-artifact@v4
+      with:
+        name: PhanMemQHTT-Qt6-Windows # Tên file ZIP kết quả
+        path: build_result/

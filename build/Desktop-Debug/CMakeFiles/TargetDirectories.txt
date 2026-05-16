@@ -1,0 +1,9 @@
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/SolveLinearProgramming.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/edit_cache.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/rebuild_cache.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/list_install_components.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/install.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/install/local.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/install/strip.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/SolveLinearProgramming_autogen_timestamp_deps.dir
+/home/alee/HocTap/QT/SolveLinearProgramming/build/Desktop-Debug/CMakeFiles/SolveLinearProgramming_autogen.dir
