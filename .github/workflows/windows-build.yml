@@ -29,32 +29,52 @@ jobs:
       run: |
         New-Item -ItemType Directory -Force -Path build_result
 
+        # Copy exe
         $exe = Get-ChildItem -Path "build" -Recurse -Filter "SolveLinearProgramming.exe" |
                Select-Object -First 1
         Copy-Item $exe.FullName -Destination "build_result\"
+        Write-Host "Đã copy exe: $($exe.FullName)"
 
-        # Tìm windeployqt
+        # Tìm Qt root
         $windeployqt = Get-ChildItem -Path "D:\a" -Recurse -Filter "windeployqt.exe" `
                            -ErrorAction SilentlyContinue | Select-Object -First 1
         $qtBin     = $windeployqt.DirectoryName
-        $qtPlugins = Join-Path (Split-Path $qtBin -Parent) "plugins"
+        $qtRoot    = Split-Path $qtBin -Parent
+        $qtPlugins = "$qtRoot\plugins"
+        Write-Host "Qt root: $qtRoot"
 
-        Write-Host "windeployqt : $($windeployqt.FullName)"
-        Write-Host "Qt plugins  : $qtPlugins"
+        # Kiểm tra qwindows.dll có tồn tại không
+        $qwindows = "$qtPlugins\platforms\qwindows.dll"
+        Write-Host "qwindows.dll exists: $(Test-Path $qwindows)"
+        Write-Host "qwindows path: $qwindows"
 
-        # ✅ FIX: Copy thủ công platform plugin trước
+        # Copy platform plugin
         New-Item -ItemType Directory -Force -Path "build_result\platforms"
-        Copy-Item "$qtPlugins\platforms\qwindows.dll" -Destination "build_result\platforms\"
+        Copy-Item $qwindows -Destination "build_result\platforms\" -Verbose
 
-        # Chạy windeployqt với đường dẫn Qt rõ ràng
-        $env:PATH = "$qtBin;$env:PATH"
-        $env:QT_PLUGIN_PATH = $qtPlugins
+        # Copy tất cả Qt DLL cần thiết từ bin
+        $qtDlls = @(
+            "Qt6Core.dll", "Qt6Gui.dll", "Qt6Widgets.dll",
+            "libgcc_s_seh-1.dll", "libstdc++-6.dll", "libwinpthread-1.dll"
+        )
+        foreach ($dll in $qtDlls) {
+            $src = "$qtBin\$dll"
+            if (Test-Path $src) {
+                Copy-Item $src -Destination "build_result\" -Verbose
+            } else {
+                Write-Warning "Không tìm thấy: $dll"
+            }
+        }
 
-        & $windeployqt.FullName `
-            --release `
-            --no-translations `
-            --compiler-runtime `
-            "build_result\SolveLinearProgramming.exe"
+        # Copy styles plugin (cần cho Qt6Widgets)
+        New-Item -ItemType Directory -Force -Path "build_result\styles"
+        $stylesDll = "$qtPlugins\styles\qwindowsvistastyle.dll"
+        if (Test-Path $stylesDll) {
+            Copy-Item $stylesDll -Destination "build_result\styles\" -Verbose
+        }
+
+        Write-Host "=== Nội dung build_result ==="
+        Get-ChildItem -Path "build_result" -Recurse | Select-Object FullName
             
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
