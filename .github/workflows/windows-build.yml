@@ -1,5 +1,4 @@
 name: Build Windows App
-
 on:
   push:
     branches: [ master, main, Algorithm_of_Hau ]
@@ -17,31 +16,43 @@ jobs:
       with:
         version: '6.4.2'
         arch: 'win64_mingw'
-        # Đã bỏ set-env: false để CMake có thể tìm thấy Qt
+        cache: true          # Tránh tải lại Qt mỗi lần (~1GB)
 
     - name: 3. Cấu hình và Biên dịch bằng CMake
       run: |
-        cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-        cmake --build build --config Release
-        
+        cmake -B build -G "MinGW Makefiles" `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DCMAKE_PREFIX_PATH="$env:Qt6_DIR"
+        cmake --build build --config Release --parallel
+
     - name: 4. Thu thập file thực thi và đóng gói DLL
       run: |
         New-Item -ItemType Directory -Force -Path build_result
-        
-        if (Test-Path "build\SolveLinearProgramming.exe") {
-            Copy-Item "build\SolveLinearProgramming.exe" -Destination "build_result\"
-        } else {
-            Copy-Item "build\Release\SolveLinearProgramming.exe" -Destination "build_result\"
+
+        # Tìm file exe linh hoạt hơn
+        $exe = Get-ChildItem -Path "build" -Recurse -Filter "SolveLinearProgramming.exe" |
+               Select-Object -First 1
+        if (-not $exe) {
+            Write-Error "Không tìm thấy SolveLinearProgramming.exe!"
+            exit 1
         }
-        
-        # Lệnh can thiệp hệ thống: Tiêu diệt biến QT_PLUGIN_PATH ngay trong phiên làm việc này
-        [Environment]::SetEnvironmentVariable("QT_PLUGIN_PATH", $null, "Process")
-        
-        # Đóng gói
-        windeployqt --release --no-translations --compiler-runtime build_result\SolveLinearProgramming.exe
-        
+        Copy-Item $exe.FullName -Destination "build_result\"
+        Write-Host "Đã copy: $($exe.FullName)"
+
+        # Dùng windeployqt từ đúng thư mục Qt (tránh nhầm version)
+        $windeployqt = "$env:Qt6_DIR\..\..\..\..\bin\windeployqt.exe"
+        $windeployqt = [System.IO.Path]::GetFullPath($windeployqt)
+        Write-Host "windeployqt path: $windeployqt"
+
+        # Xóa QT_PLUGIN_PATH để tránh xung đột
+        $env:QT_PLUGIN_PATH = $null
+
+        & $windeployqt --release --no-translations --compiler-runtime `
+                       "build_result\SolveLinearProgramming.exe"
+
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
       with:
         name: PhanMemQHTT-Qt6-Windows
         path: build_result/
+        retention-days: 7    # Tự xóa sau 7 ngày để tiết kiệm storage
