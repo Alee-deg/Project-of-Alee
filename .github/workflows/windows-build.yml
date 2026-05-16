@@ -29,7 +29,7 @@ jobs:
       run: |
         New-Item -ItemType Directory -Force -Path build_result
 
-        # Tìm file exe linh hoạt hơn
+        # Tìm file exe
         $exe = Get-ChildItem -Path "build" -Recurse -Filter "SolveLinearProgramming.exe" |
                Select-Object -First 1
         if (-not $exe) {
@@ -39,16 +39,24 @@ jobs:
         Copy-Item $exe.FullName -Destination "build_result\"
         Write-Host "Đã copy: $($exe.FullName)"
 
-        # Dùng windeployqt từ đúng thư mục Qt (tránh nhầm version)
-        $windeployqt = "$env:Qt6_DIR\..\..\..\..\bin\windeployqt.exe"
-        $windeployqt = [System.IO.Path]::GetFullPath($windeployqt)
-        Write-Host "windeployqt path: $windeployqt"
+        # Tìm windeployqt trực tiếp từ Qt installation
+        $windeployqt = Get-ChildItem -Path "$env:RUNNER_TOOL_CACHE" -Recurse -Filter "windeployqt.exe" |
+                       Where-Object { $_.FullName -like "*mingw*" -or $_.FullName -like "*msvc*" } |
+                       Select-Object -First 1
+
+        if (-not $windeployqt) {
+            # Fallback: tìm toàn bộ ổ D
+            $windeployqt = Get-ChildItem -Path "D:\a" -Recurse -Filter "windeployqt.exe" -ErrorAction SilentlyContinue |
+                           Select-Object -First 1
+        }
+
+        Write-Host "windeployqt found: $($windeployqt.FullName)"
 
         # Xóa QT_PLUGIN_PATH để tránh xung đột
         $env:QT_PLUGIN_PATH = $null
 
-        & $windeployqt --release --no-translations --compiler-runtime `
-                       "build_result\SolveLinearProgramming.exe"
+        & "$($windeployqt.FullName)" --release --no-translations --compiler-runtime `
+                                     "build_result\SolveLinearProgramming.exe"
 
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
