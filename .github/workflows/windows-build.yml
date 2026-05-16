@@ -25,7 +25,7 @@ jobs:
         
     - name: 4. Thu thập file thực thi và đóng gói DLL
       run: |
-        # Tạo thư mục (PowerShell syntax)
+        # Tạo thư mục chứa sản phẩm
         New-Item -ItemType Directory -Force -Path build_result
         
         # Copy file exe
@@ -35,11 +35,12 @@ jobs:
             Copy-Item "build\Release\SolveLinearProgramming.exe" -Destination "build_result\"
         }
         
-        # Ép xóa biến môi trường gây nhiễu cực mạnh bằng PowerShell
-        $env:QT_PLUGIN_PATH=""
+        # XÓA TẬN GỐC biến môi trường gây mù đường cho windeployqt
+        Remove-Item Env:\QT_PLUGIN_PATH -ErrorAction SilentlyContinue
         
-        # Gọi windeployqt và ép nó xả thư viện thẳng vào thư mục build_result
-        windeployqt --release --no-translations --compiler-runtime --dir build_result build_result\SolveLinearProgramming.exe
+        # Di chuyển hẳn vào trong thư mục chứa file exe rồi mới gọi windeployqt
+        cd build_result
+        windeployqt --release --no-translations --compiler-runtime SolveLinearProgramming.exe
         
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
