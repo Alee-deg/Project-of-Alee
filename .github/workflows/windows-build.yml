@@ -25,22 +25,26 @@ jobs:
         
     - name: 4. Thu thập file thực thi và đóng gói DLL
       run: |
-        # Tạo thư mục chứa sản phẩm
+        # 1. Tạo thư mục chứa sản phẩm
         New-Item -ItemType Directory -Force -Path build_result
         
-        # Copy file exe
+        # 2. Copy file exe
         if (Test-Path "build\SolveLinearProgramming.exe") {
             Copy-Item "build\SolveLinearProgramming.exe" -Destination "build_result\"
         } else {
             Copy-Item "build\Release\SolveLinearProgramming.exe" -Destination "build_result\"
         }
         
-        # XÓA TẬN GỐC biến môi trường gây mù đường cho windeployqt
-        Remove-Item Env:\QT_PLUGIN_PATH -ErrorAction SilentlyContinue
+        # 3. Lấy đường dẫn TUYỆT ĐỐI của file exe
+        $exeFullPath = (Resolve-Path "build_result\SolveLinearProgramming.exe").Path
         
-        # Di chuyển hẳn vào trong thư mục chứa file exe rồi mới gọi windeployqt
-        cd build_result
-        windeployqt --release --no-translations --compiler-runtime SolveLinearProgramming.exe
+        # 4. TRICK HỆ THỐNG: Tìm thư mục 'bin' gốc của Qt và chui hẳn vào đó
+        $qtBinDir = Split-Path (Get-Command windeployqt).Definition -Parent
+        Write-Host "Di chuyen he thong vao thu muc goc cua Qt: $qtBinDir"
+        Set-Location -Path $qtBinDir
+        
+        # 5. Khởi động windeployqt từ chính nhà của nó
+        .\windeployqt.exe --release --no-translations --compiler-runtime $exeFullPath
         
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
