@@ -32,31 +32,28 @@ jobs:
         $exe = Get-ChildItem -Path "build" -Recurse -Filter "SolveLinearProgramming.exe" |
                Select-Object -First 1
         Copy-Item $exe.FullName -Destination "build_result\"
-        Write-Host "Đã copy: $($exe.FullName)"
 
-        # Tìm windeployqt.exe trực tiếp — không đoán path nữa
+        # Tìm windeployqt
         $windeployqt = Get-ChildItem -Path "D:\a" -Recurse -Filter "windeployqt.exe" `
                            -ErrorAction SilentlyContinue | Select-Object -First 1
-
-        if (-not $windeployqt) {
-            Write-Error "Không tìm thấy windeployqt.exe!"
-            exit 1
-        }
-
         $qtBin     = $windeployqt.DirectoryName
         $qtPlugins = Join-Path (Split-Path $qtBin -Parent) "plugins"
 
         Write-Host "windeployqt : $($windeployqt.FullName)"
-        Write-Host "Qt bin      : $qtBin"
         Write-Host "Qt plugins  : $qtPlugins"
 
+        # ✅ FIX: Copy thủ công platform plugin trước
+        New-Item -ItemType Directory -Force -Path "build_result\platforms"
+        Copy-Item "$qtPlugins\platforms\qwindows.dll" -Destination "build_result\platforms\"
+
+        # Chạy windeployqt với đường dẫn Qt rõ ràng
+        $env:PATH = "$qtBin;$env:PATH"
         $env:QT_PLUGIN_PATH = $qtPlugins
 
         & $windeployqt.FullName `
             --release `
             --no-translations `
             --compiler-runtime `
-            --plugindir "build_result\plugins" `
             "build_result\SolveLinearProgramming.exe"
             
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
