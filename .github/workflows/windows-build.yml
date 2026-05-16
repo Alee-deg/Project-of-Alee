@@ -28,20 +28,20 @@ jobs:
     - name: 4. Thu thập file thực thi và đóng gói DLL
       shell: bash
       run: |
-        # Tạo thư mục chứa sản phẩm cuối cùng
-        mkdir build_result
+        mkdir -p build_result
         
-        # LƯU Ý: Thay "SolveLinearProgramming.exe" bằng tên target trong file CMakeLists.txt của bạn nếu có khác biệt
-        # Kiểm tra xem file exe nằm ở thư mục build/ hay build/Release/ rồi copy ra ngoài
         if [ -f "build/SolveLinearProgramming.exe" ]; then
           cp build/SolveLinearProgramming.exe build_result/
         else
           cp build/Release/SolveLinearProgramming.exe build_result/
         fi
         
-        # Gọi công cụ của Qt 6 để tự động nhặt các file DLL cần thiết
+        # ---> THÊM DÒNG NÀY ĐỂ SỬA LỖI PLATFORM PLUGIN <---
+        unset QT_PLUGIN_PATH
+        
+        # Gọi công cụ của Qt 6
         windeployqt --release --no-translations --compiler-runtime build_result/SolveLinearProgramming.exe
-
+        
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
       uses: actions/upload-artifact@v4
       with:
