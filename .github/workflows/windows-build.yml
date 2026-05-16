@@ -17,8 +17,7 @@ jobs:
       with:
         version: '6.4.2'
         arch: 'win64_mingw'
-        # VŨ KHÍ TỐI THƯỢNG: Ngăn chặn action này làm hỏng windeployqt
-        set-env: 'false' 
+        # Đã bỏ set-env: false để CMake có thể tìm thấy Qt
 
     - name: 3. Cấu hình và Biên dịch bằng CMake
       run: |
@@ -35,7 +34,10 @@ jobs:
             Copy-Item "build\Release\SolveLinearProgramming.exe" -Destination "build_result\"
         }
         
-        # Môi trường đã sạch, windeployqt giờ sẽ chạy mượt mà
+        # Lệnh can thiệp hệ thống: Tiêu diệt biến QT_PLUGIN_PATH ngay trong phiên làm việc này
+        [Environment]::SetEnvironmentVariable("QT_PLUGIN_PATH", $null, "Process")
+        
+        # Đóng gói
         windeployqt --release --no-translations --compiler-runtime build_result\SolveLinearProgramming.exe
         
     - name: 5. Đóng gói thành file ZIP gửi về cho bạn
